@@ -1,5 +1,5 @@
 /*
-   Copyright 2018 - 2022 Volker Berlin (i-net software)
+   Copyright 2018 - 2023 Volker Berlin (i-net software)
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -109,6 +109,9 @@ public class WatParser extends WasmCodeBuilder {
                         break;
                     case "i32.trunc_sat_f32_s":
                         addConvertInstruction( ValueTypeConvertion.f2i, javaCodePos, lineNumber );
+                        break;
+                    case "i32.wrap_i64":
+                        addConvertInstruction( ValueTypeConvertion.l2i, javaCodePos, lineNumber );
                         break;
                     case "i64.const":
                         addConstInstruction( Long.parseLong( get( tokens, ++i ) ), ValueType.i64, javaCodePos, lineNumber );
@@ -227,6 +230,9 @@ public class WatParser extends WasmCodeBuilder {
                     case "ref.is_null":
                         addNumericInstruction( NumericOperator.ifnull, ValueType.i32, javaCodePos, lineNumber );
                         break;
+                    case "ref.eq":
+                        addNumericInstruction( NumericOperator.ref_eq, ValueType.i32, javaCodePos, lineNumber );
+                        break;
                     case "table.get":
                         addTableInstruction( true, getInt( tokens, ++i), javaCodePos, lineNumber );
                         break;
@@ -243,7 +249,8 @@ public class WatParser extends WasmCodeBuilder {
                             } while ( !")".equals( str ) );
                             builder.append( get( tokens, ++i ) );
                             FunctionName name = new FunctionName( builder.substring( 1 ) );
-                            addCallInstruction( name, false, javaCodePos, lineNumber );
+                            boolean needThisParameter = "<init>".equals( name.methodName ); // TODO should be do lookup to the classLoader
+                            addCallInstruction( name, needThisParameter, javaCodePos, lineNumber );
                         } catch( Exception ex ) {
                             throw WasmException.create( "The syntax for a function name is $package.ClassName.methodName(paramSignature)returnSignature", ex );
                         }
@@ -333,6 +340,16 @@ public class WatParser extends WasmCodeBuilder {
                     case "struct.new_with_rtt":
                         typeName = get( tokens, ++i );
                         addStructInstruction( StructOperator.NEW_WITH_RTT, typeName, null, javaCodePos, lineNumber );
+                        break;
+                    case "struct.new_default": // Create instance without executing the constructor, works also with nonGC output
+                        typeName = get( tokens, ++i );
+                        addStructInstruction( StructOperator.NEW_DEFAULT, typeName, null, javaCodePos, lineNumber );
+                        break;
+                    case "array.get":
+                    case "array.set":
+                        typeName = get( tokens, ++i );
+                        type = ((ArrayType)getTypeManager().valueOf( typeName )).getArrayType();
+                        addArrayInstruction( "array.get".equals( tok ) ? ArrayOperator.GET : ArrayOperator.SET, type, javaCodePos, lineNumber );
                         break;
                     default:
                         throw new WasmException( "Unknown WASM token: " + tok, lineNumber );

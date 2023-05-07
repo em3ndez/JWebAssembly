@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 - 2022 Volker Berlin (i-net software)
+ * Copyright 2018 - 2023 Volker Berlin (i-net software)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,6 +173,9 @@ class FunctionManager {
             switch( name.className ) {
                 case UnsafeManager.UNSAFE_8:
                 case UnsafeManager.UNSAFE_11:
+                case UnsafeManager.FIELDUPDATER:
+                case UnsafeManager.VARHANDLE:
+                case UnsafeManager.METHOD_HANDLES:
                     // Unsafe method call will be replaces by the UnsafeManager
                     return name;
             }
@@ -198,6 +201,14 @@ class FunctionManager {
             }
         }
         return state.alias == null ? name : state.alias;
+    }
+
+    /**
+     * If the function manager is finish
+     * @return the finish flag
+     */
+    boolean isFinish() {
+        return isFinish;
     }
 
     /**

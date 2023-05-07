@@ -15,10 +15,14 @@
  */
 package de.inetsoftware.jwebassembly.runtime;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.ClassRule;
 import org.junit.runners.Parameterized.Parameters;
@@ -51,8 +55,14 @@ public class UnsafeTest extends AbstractBaseTest {
             addParam( list, script, "getAndAddLong" );
             addParam( list, script, "getAndSetLong" );
             addParam( list, script, "lazySetLong" );
+            addParam( list, script, "compareAndSwapReference" );
+            addParam( list, script, "getAndSetReference" );
+            addParam( list, script, "lazySetReference" );
+            addParam( list, script, "atomicReferenceFieldUpdater" );
+            addParam( list, script, "putLong" );
         }
         rule.setTestParameters( list );
+
         return list;
     }
 
@@ -134,6 +144,48 @@ public class UnsafeTest extends AbstractBaseTest {
             AtomicLong obj = new AtomicLong();
             obj.lazySet( 42 );
             return obj.get();
+        }
+
+        @Export
+        static int compareAndSwapReference() {
+            AtomicReference<Integer> obj = new AtomicReference<>();
+            if( obj.compareAndSet( null, 25 ) ) {
+                return obj.get();
+            } else {
+                return 42;
+            }
+        }
+
+        @Export
+        static int getAndSetReference() {
+            AtomicReference<Integer> obj = new AtomicReference<>();
+            obj.set( 13 );
+            if( obj.getAndSet( 25 ) == 13 ) {
+                return obj.get();
+            } else {
+                return 42;
+            }
+        }
+
+        @Export
+        static int lazySetReference() {
+            AtomicReference<Integer> obj = new AtomicReference<>();
+            obj.lazySet( 42 );
+            return obj.get();
+        }
+
+        @Export
+        static int atomicReferenceFieldUpdater() throws Throwable {
+            ByteArrayInputStream input = new ByteArrayInputStream( new byte[0] );
+            BufferedInputStream stream = new BufferedInputStream( input );
+            stream.close();
+            return 42;
+        }
+
+        @Export
+        static int putLong() {
+            ThreadLocalRandom.current().nextInt();
+            return 42;
         }
     }
 }
